@@ -146,7 +146,7 @@
   [broker :- Broker capsule :- Capsule]
   (let [ring-request (make-ring-request broker capsule)
         {:keys [authorization-check]} broker]
-    (log/error "Checking rules against " ring-request)
+    (log/debug "Checking rules against " ring-request)
     (let [{:keys [authorized message]} (authorization-check ring-request)
           allowed (boolean authorized)]
       (log/infof "Message authorization %s: %s" allowed message)
