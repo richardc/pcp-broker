@@ -124,15 +124,15 @@
   [broker :- Broker capsule :- Capsule]
   (let [{:keys [sender targets message_type]} (:message capsule)
         form-params {}
-        request-params {:sender sender
-                        :targets (if (= 1 (count targets)) (first targets) targets)
-                        :message_type message_type}
+        query-params {"sender" sender
+                      "targets" (if (= 1 (count targets)) (first targets) targets)
+                      "message_type" message_type}
         request {:uri "/pcp-broker/send"
                  :request-method :post
                  :remote-addr ""
-                 :request-params request-params
                  :form-params form-params
-                 :params (merge request-params form-params)}]
+                 :query-params query-params
+                 :params (merge query-params form-params)}]
     ;; some things we can only know when sender is connected
     (if-let [websocket (get-websocket broker sender)]
       (let [remote-addr (.. websocket (getSession) (getRemoteAddress) (toString))
@@ -147,14 +147,10 @@
   (let [ring-request (make-ring-request broker capsule)
         {:keys [authorization-check]} broker]
     (log/error "Checking rules against " ring-request)
-    (let [{:keys [authorized message]} (authorization-check ring-request)]
-      (if authorized
-        (do
-          (log/info "Message authed:" message)
-          true)
-        (do
-          (log/info "Message not authorized:" message)
-          false)))))
+    (let [{:keys [authorized message]} (authorization-check ring-request)
+          allowed (boolean authorized)]
+      (log/infof "Message authorization %s: %s" allowed message)
+      allowed)))
 
 ;; message lifecycle
 (s/defn ^:always-validate accept-message-for-delivery :- Capsule

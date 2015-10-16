@@ -7,8 +7,8 @@
 
     <logger name="org.eclipse.jetty.server" level="warn"/>
     <logger name="org.eclipse.jetty.util.log" level="warn"/>
-    <logger name="puppetlabs.trapperkeeper.authorization" level="debug"/>
-    <logger name="puppetlabs.trapperkeeper.services.authorization" level="debug"/>
+    <logger name="puppetlabs.trapperkeeper.authorization" level="trace"/>
+    <logger name="puppetlabs.trapperkeeper.services.authorization" level="trace"/>
 
 
     <root level="info">
