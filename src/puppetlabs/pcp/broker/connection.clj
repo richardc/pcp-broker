@@ -23,7 +23,7 @@
 
 (def ConnectionLog
   "summarize a connection for logging"
-  {:commonname s/Str
+  {:commonname (s/maybe s/Str)
    :remoteaddress s/Str})
 
 (s/defn ^:always-validate make-connection :- Connection
@@ -36,11 +36,11 @@
                            "[UNKNOWN ADDRESS]"))
    :created-at (ks/timestamp)})
 
-(s/defn ^:always-validate get-cn :- s/Str
+(s/defn ^:always-validate get-cn :- (s/maybe s/Str)
   "Get the client certificate name from a websocket"
   [connection :- Connection]
   (let [{:keys [websocket]} connection]
-    (when-let [cert (first (websockets-client/peer-certs websocket))]
+    (if-let [cert (first (websockets-client/peer-certs websocket))]
       (ks/cn-for-cert cert))))
 
 (s/defn ^:always-validate summarize :- ConnectionLog
