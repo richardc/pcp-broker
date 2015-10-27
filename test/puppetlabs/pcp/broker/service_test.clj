@@ -70,11 +70,14 @@
     app
     [authorization-service broker-service jetty9-service webrouting-service metrics-service]
     broker-config
-    (let [closed (promise)]
+    (let [connected (promise)
+          closed (promise)]
       (with-open [client (http/create-client)
                   ws (http/websocket client
                                      "wss://127.0.0.1:8143/pcp"
+                                     :open (fn [ws] (deliver connected true))
                                      :close (fn [ws code reason] (deliver closed [code reason])))]
+        (is (= true (deref connected (* 2 1000) false)) "Connected within 2 seconds")
         (is (= [4003 "No client certificate"] (deref closed (* 2 1000) false)) "Disconnected due to no client certificate")))))
 
 (deftest certificate-must-match-test
