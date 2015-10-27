@@ -365,20 +365,24 @@
 (defn- on-connect!
   "OnConnect websocket event handler"
   [broker ws]
-  (time! (:on-connect (:metrics broker))
-         (let [connection (add-connection! broker ws)
-               idle-timeout (* 1000 60 15)]
-           (if (not (first (websockets-client/peer-certs ws)))
-             (do
-               (sl/maplog :debug (assoc (connection/summarize connection)
-                                        :type :connection-no-peer-certificate)
-                          "No client certificate, closing {remoteaddress}")
-               (websockets-client/close! ws 4003 "No client certificate"))
-             (do
-               (websockets-client/idle-timeout! ws idle-timeout)
-               (sl/maplog :debug (assoc (connection/summarize connection)
-                                        :type :connection-open)
-                          "client {commonname} connected from {remoteaddress}"))))))
+  (try+
+    (time! (:on-connect (:metrics broker))
+           (let [connection (add-connection! broker ws)
+                 idle-timeout (* 1000 60 15)]
+             (if (not (first (websockets-client/peer-certs ws)))
+               (do
+                 (sl/maplog :debug (assoc (connection/summarize connection)
+                                          :type :connection-no-peer-certificate)
+                            "No client certificate, closing {remoteaddress}")
+                 (websockets-client/close! ws 4003 "No client certificate"))
+               (do
+                 (websockets-client/idle-timeout! ws idle-timeout)
+                 (sl/maplog :debug (assoc (connection/summarize connection)
+                                          :type :connection-open)
+                            "client {commonname} connected from {remoteaddress}")))))
+    (catch Exception e
+      (sl/maplog :error e {:type :connection-exception}
+                 "Error in on-connect"))))
 
 
 (s/defn ^:always-validate connection-open :- Connection
@@ -460,22 +464,32 @@
 (defn- on-error
   "OnError websocket event handler"
   [broker ws e]
-  (let [connection (get-connection broker ws)]
-    (sl/maplog :error e (assoc (connection/summarize connection)
-                               :type :connection-error)
-               "Websocket error {commonname} {remoteaddress}")))
+  (try+
+    (let [connection (get-connection broker ws)]
+      (sl/maplog :error e (assoc (connection/summarize connection)
+                                 :type :connection-error)
+                 "Websocket error {commonname} {remoteaddress}"))
+    (catch Exception e
+      (sl/maplog :error e {:type :on-error-exception}
+                 "Exception in on-error"))))
+
 
 (defn- on-close!
   "OnClose websocket event handler"
   [broker ws status-code reason]
-  (time! (:on-close (:metrics broker))
-         (let [connection (get-connection broker ws)]
-           (sl/maplog :debug (assoc (connection/summarize connection)
-                                    :type :connection-close
-                                    :statuscode status-code
-                                    :reason reason)
-                      "client {commonname} disconnected from {remoteaddress} {statuscode} {reason}")
-           (remove-connection! broker ws))))
+  (try+
+    (time! (:on-close (:metrics broker))
+           (let [connection (get-connection broker ws)]
+             (sl/maplog :debug (assoc (connection/summarize connection)
+                                      :type :connection-close
+                                      :statuscode status-code
+                                      :reason reason)
+                        "client {commonname} disconnected from {remoteaddress} {statuscode} {reason}")
+             (remove-connection! broker ws)))
+    (catch Exception e
+      (sl/maplog :error e {:type :on-close-exception}
+                 "Exception in on-close"))))
+
 
 (s/defn ^:always-validate build-websocket-handlers :- {s/Keyword IFn}
   [broker :- Broker]
