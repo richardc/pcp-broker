@@ -459,7 +459,11 @@
 (defn- on-bytes!
   "OnMessage (binary) websocket event handler"
   [broker ws bytes offset len]
-  (on-message! broker ws bytes))
+  (try+
+   (on-message! broker ws bytes)
+   (catch Exception e
+     (sl/maplog :error e {:type :on-bytes-error}
+                "Exception in on-bytes"))))
 
 (defn- on-error
   "OnError websocket event handler"
