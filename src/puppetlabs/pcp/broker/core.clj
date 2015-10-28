@@ -374,6 +374,8 @@
                  (sl/maplog :debug (assoc (connection/summarize connection)
                                           :type :connection-no-peer-certificate)
                             "No client certificate, closing {remoteaddress}")
+
+                 (Thread/sleep 250)
                  (websockets-client/close! ws 4003 "No client certificate"))
                (do
                  (websockets-client/idle-timeout! ws idle-timeout)
