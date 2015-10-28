@@ -8,6 +8,7 @@
     <logger name="org.eclipse.jetty.server" level="warn"/>
     <logger name="org.eclipse.jetty.util.log" level="warn"/>
     <logger name="puppetlabs.pcp.broker" level="trace"/>
+    <logger name="com.ning.http.client" level="debug"/>
 
     <root level="info">
         <appender-ref ref="STDOUT" />
