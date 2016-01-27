@@ -44,6 +44,10 @@
                  [puppetlabs/trapperkeeper-webserver-jetty9 "1.5.0"]
                  [puppetlabs/trapperkeeper-status "0.2.1"]
 
+
+                 ;; HACK.  Transitive dependency for tk-master (HUP)
+                 [beckon "0.1.1"]
+
                  ;; Exclude clojure dep for now as that will force a ripple up to clojure 1.7.0
                  [puppetlabs/structured-logging "0.1.0" :exclusions [org.clojure/clojure]]
 
