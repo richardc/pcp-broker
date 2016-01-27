@@ -1,4 +1,4 @@
-(def tk-version "1.1.1")
+(def tk-version "1.2.0")
 (def ks-version "1.1.0")
 
 (defproject puppetlabs/pcp-broker "0.6.2-SNAPSHOT"
@@ -48,7 +48,7 @@
                  [puppetlabs/structured-logging "0.1.0" :exclusions [org.clojure/clojure]]
 
                  [cheshire "5.5.0"]
-                 [prismatic/schema "0.4.3"]
+                 [prismatic/schema "1.0.4"]
 
                  [com.taoensso/nippy "2.9.0"]
 
