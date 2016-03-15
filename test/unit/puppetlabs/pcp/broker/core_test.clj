@@ -235,25 +235,32 @@
                              :message_type "http://puppetlabs.com/associate_request"))]
       (is (= false (session-association-message? message))))))
 
+(defn association-capsule
+  [sender seconds]
+  (capsule/wrap (-> (message/make-message :sender sender)
+                    (message/set-expiry seconds :seconds))))
+
 (deftest reason-to-deny-association-test
   (let [broker     (make-test-broker)
         connection (connection/make-connection "websocket" identity-codec)
         associated (assoc connection :state :associated :uri "pcp://test/foo")]
-    (is (= nil (reason-to-deny-association broker connection "pcp://test/foo")))
+    (is (= nil (reason-to-deny-association broker connection (association-capsule "pcp://test/foo" 3))))
+    (is (= "association request expired"
+           (reason-to-deny-association broker connection (association-capsule "pcp://test/foo" -1))))
     (is (= "'server' type connections not accepted"
-           (reason-to-deny-association broker connection "pcp://test/server")))
+           (reason-to-deny-association broker connection (association-capsule "pcp://test/server" 3))))
     (is (= "session already associated"
-           (reason-to-deny-association broker associated "pcp://test/foo")))
+           (reason-to-deny-association broker associated (association-capsule "pcp://test/foo" 3))))
     (is (= "session already associated"
-           (reason-to-deny-association broker associated "pcp://test/bar")))))
+           (reason-to-deny-association broker associated (association-capsule "pcp://test/bar" 3))))))
 
 (deftest process-associate-message-test
   (let [closed (atom (promise))]
     (with-redefs [puppetlabs.experimental.websockets.client/close! (fn [& args] (deliver @closed args))
                   puppetlabs.experimental.websockets.client/send! (constantly false)]
-      (let [message (-> (message/make-message)
-                        (assoc  :sender "pcp://localhost/controller"
-                                :message_type "http://puppetlabs.com/login_message"))
+      (let [message (-> (message/make-message :sender "pcp://localhost/controller"
+                                              :message_type "http://puppetlabs.com/login_message")
+                        (message/set-expiry 3 :seconds))
             capsule (capsule/wrap message)]
         (testing "It should return an associated session"
           (reset! closed (promise))

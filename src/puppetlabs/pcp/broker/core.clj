@@ -267,16 +267,20 @@
 (s/defn ^:always-validate reason-to-deny-association :- (s/maybe s/Str)
   "Returns an error message describing why the session should not be
   allowed, if it should be denied"
-  [broker :- Broker connection :- Connection as :- p/Uri]
-  (let [[_ type] (p/explode-uri as)]
+  [broker :- Broker connection :- Connection capsule :- Capsule]
+  (let [sender (get-in capsule [:message :sender])
+        [_ type] (p/explode-uri sender)]
     (cond
       (= type "server")
       "'server' type connections not accepted"
 
+      (capsule/expired? capsule)
+      "association request expired"
+
       (= :associated (:state connection))
       (let [{:keys [uri]} connection]
         (sl/maplog :debug (assoc (connection/summarize connection)
-                                 :uri as
+                                 :uri sender
                                  :existinguri uri
                                  :type :connection-already-associated)
                    "Received session association for {uri} from {commonname} {remoteaddress}.  Session was already associated as {existinguri}")
@@ -290,7 +294,7 @@
         uri      (:sender request)
         ws       (:websocket connection)
         encode (get-in connection [:codec :encode])
-        reason   (reason-to-deny-association broker connection uri)
+        reason   (reason-to-deny-association broker connection capsule)
         response (if reason {:id id :success false :reason reason} {:id id :success true})]
     (s/validate p/AssociateResponse response)
     (let [message (-> (message/make-message :message_type "http://puppetlabs.com/associate_response"
