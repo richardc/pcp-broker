@@ -299,6 +299,11 @@
           encode (get-in connection [:codec :encode])]
       (if (capsule/expired? capsule)
         (let [response (make-ttl_expired-message request)]
+          (sl/maplog :debug (merge (capsule/summarize capsule)
+                                   (connection/summarize connection)
+                                   {:expired (get-in capsule [:message :expires])
+                                    :type :connection-association-expired})
+                     "Expired association message with timestamp {expired} recieved from {commonname} {remoteaddress}. Sending ttl_expired")
           (websockets-client/send! ws (encode response))
           connection)
         (let [uri (:sender request)
